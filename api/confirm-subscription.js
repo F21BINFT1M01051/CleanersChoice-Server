@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
         customer: customerId,
         items: [{ price: process.env.PRICE_ID }],
         default_payment_method: paymentMethod,
-        expand: ["latest_invoice.payment_intent"],
+        expand: ["latest_invoice"], 
       });
       res.status(200).json({ success: true, subscriptionId: subscription.id });
     } catch (err) {
