@@ -1,21 +1,29 @@
-require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
 module.exports = async (req, res) => {
   if (req.method === "POST") {
-    const { customerId } = req.body;
-
+    const { customerId, setupIntentId } = req.body;
     try {
-      const customer = await stripe.customers.retrieve(customerId);
-      const defaultPaymentMethod = customer.invoice_settings.default_payment_method;
-
+      const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+      const paymentMethod = setupIntent.payment_method;
+      if (!paymentMethod) {
+        throw new Error("No payment method found on SetupIntent");
+      }
+      // Attach payment method to customer (if not already)
+      await stripe.paymentMethods.attach(paymentMethod, {
+        customer: customerId,
+      });
+      // Set default payment method for customer
+      await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethod,
+        },
+      });
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: process.env.PRICE_ID }],
-        default_payment_method: defaultPaymentMethod,
-        expand: ["latest_invoice"],
+        default_payment_method: paymentMethod,
+        expand: ["latest_invoice.payment_intent"],
       });
-
       res.status(200).json({ success: true, subscriptionId: subscription.id });
     } catch (err) {
       console.error("Subscription Error:", err);
