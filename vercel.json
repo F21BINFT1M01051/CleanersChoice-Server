@@ -1,10 +1,27 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "api/**/*.js",
-        "use": "@vercel/node"
-      }
-    ]
-  }
-  
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/create-subscription",
+      "dest": "/api/create-subscription.js"
+    },
+    {
+      "src": "/api/confirm-subscription",
+      "dest": "/api/confirm-subscription.js"
+    },
+    {
+      "src": "/api/cancel-subscription",
+      "dest": "/api/cancel-subscription.js"
+    },
+    {
+      "src": "/api/webhook",
+      "dest": "/api/webhook.js"
+    }
+  ]
+}
