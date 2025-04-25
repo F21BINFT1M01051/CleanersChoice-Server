@@ -5,11 +5,6 @@
         "src": "api/**/*.js",
         "use": "@vercel/node"
       }
-    ],
-    "env": {
-      "STRIPE_SECRET_KEY": "k_test_51RGKGGAXfb0Ycwhm9eFkhZI0nrGtIMDAGk0KWI5LBHWiZynwxGhpNCMnMF8FLvoQfbJd1o6Tas0DxqwA3QgXVVNX00cNh51IEE",
-      "STRIPE_WEBHOOK_SECRET": "whsec_ac56cb3cae9858d375cb73fb3f74562bda2e689b29e7360406a6e2bf6e7eb97c",
-      "PRICE_ID": "price_1RH38IAXfb0YcwhmyT6tlZnd"
-    }
+    ]
   }
   
