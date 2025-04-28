@@ -27,9 +27,10 @@ module.exports = async (req, res) => {
       
       console.log("Subscription object:", subscription);
 
-      const subscriptionEndDate = subscription.billing_cycle_anchor * 1000;
-
-      res.status(200).json({ success: true, subscriptionId: subscription.id ,  subscriptionEndDate,});
+      const subscriptionEndDate = subscription.latest_invoice.period_end * 1000; 
+      const periodEndTimestamp = subscriptionEndDate + 30 * 24 * 60 * 60 * 1000;
+      
+      res.status(200).json({ success: true, subscriptionId: subscription.id ,  periodEndTimestamp,});
     } catch (err) {
       console.error("Subscription Error:", err);
       res.status(500).json({ success: false, message: err.message });
