@@ -9,11 +9,17 @@ module.exports = async (req, res) => {
 
     const { subscriptionId } = req.body;
 
-    const deletedSubscription = await stripe.subscriptions.cancel(subscriptionId);
-    return res.status(200).json({ success: true, canceledAt: deletedSubscription.canceled_at });
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true,
+    });
 
+    return res.status(200).json({
+      success: true,
+      canceledAt: updatedSubscription.canceled_at, 
+      currentPeriodEnd: updatedSubscription.current_period_end,
+    });
   } catch (error) {
     console.error("Cancel Subscription Error:", error);
-    return res.status(500).json({ success: false, message: error.message || 'Internal Server Error' });
+    return res.status(500).json({ success: false, message: error.message || "Internal Server Error" });
   }
 };
