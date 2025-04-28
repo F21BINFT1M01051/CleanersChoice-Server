@@ -24,6 +24,9 @@ module.exports = async (req, res) => {
         default_payment_method: paymentMethod,
         expand: ["latest_invoice"], 
       });
+      
+      console.log("Subscription object:", subscription);
+
       const subscriptionEndDate = subscription.current_period_end * 1000;
 
       res.status(200).json({ success: true, subscriptionId: subscription.id ,  subscriptionEndDate,});
