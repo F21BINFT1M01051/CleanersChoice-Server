@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       canceledAt: updatedSubscription.canceled_at, 
-      currentPeriodEnd: updatedSubscription.current_period_end,
+      currentPeriodEnd: updatedSubscription.cancel_at,
     });
   } catch (error) {
     console.error("Cancel Subscription Error:", error);
