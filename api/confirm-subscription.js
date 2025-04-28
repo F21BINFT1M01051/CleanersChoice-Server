@@ -24,12 +24,10 @@ module.exports = async (req, res) => {
         default_payment_method: paymentMethod,
         expand: ["latest_invoice"], 
       });
-      
+
       console.log("Subscription object:", subscription);
 
-      const subscriptionEndDate = subscription.current_period_end * 1000;
-
-      res.status(200).json({ success: true, subscriptionId: subscription.id ,  subscriptionEndDate,});
+      res.status(200).json({ success: true, subscriptionId: subscription.id ,});
     } catch (err) {
       console.error("Subscription Error:", err);
       res.status(500).json({ success: false, message: err.message });
