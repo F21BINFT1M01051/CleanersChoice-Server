@@ -13,6 +13,8 @@ module.exports = async (req, res) => {
       cancel_at_period_end: true,
     });
 
+    console.log('update............', updatedSubscription)
+
     return res.status(200).json({
       success: true,
       canceledAt: updatedSubscription.canceled_at, 
