@@ -22,6 +22,10 @@
     {
       "src": "/api/webhook",
       "dest": "/api/webhook.js"
+    },
+     {
+      "src": "/api/send-notification",
+      "dest": "/api/send-notification.js"
     }
   ]
 }
