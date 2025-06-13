@@ -13,6 +13,8 @@ module.exports = async (req, res) => {
         payment_method_types: ["card"],
       });
 
+      console.log('setupIntent...............', setupIntent)
+
       res.status(200).json({
         setupIntentClientSecret: setupIntent.client_secret,
         customerId: customer.id,
