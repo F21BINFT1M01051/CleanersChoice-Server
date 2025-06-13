@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
       res.status(200).json({
         setupIntentClientSecret: setupIntent.client_secret,
         customerId: customer.id,
+        setupIntentId: setupIntent.id,
       });
     } catch (error) {
       console.error("SetupIntent Error:", error);
