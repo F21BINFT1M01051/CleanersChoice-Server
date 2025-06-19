@@ -1,6 +1,8 @@
-require("dotenv").config();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const Stripe = require("stripe");
+const getRawBody = require("raw-body");
 const admin = require("firebase-admin");
+
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Firebase Admin Initialization
 if (!admin.apps.length) {
@@ -10,23 +12,36 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-module.exports = async (req, res) => {
+export const config = {
+  api: {
+    bodyParser: false, // Disable default body parsing
+  },
+};
+
+export default async function handler(req, res) {
   if (req.method === "POST") {
     const signature = req.headers["stripe-signature"];
-    let event;
 
+    let rawBody;
+    try {
+      rawBody = await getRawBody(req);
+    } catch (err) {
+      return res.status(400).send("Unable to read request body");
+    }
+
+    let event;
     try {
       event = stripe.webhooks.constructEvent(
-        req.body,
+        rawBody,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("Webhook Error:", err.message);
+      console.error("❌ Webhook Error:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ✅ 1. Initial setup success (existing handler)
+    // Handle setup_intent.succeeded
     if (event.type === "setup_intent.succeeded") {
       const setupIntent = event.data.object;
       const customerId = setupIntent.customer;
@@ -37,19 +52,17 @@ module.exports = async (req, res) => {
         },
       });
 
-      console.log(`Set default payment method for customer ${customerId}`);
+      console.log(`✅ Default payment method set for ${customerId}`);
     }
 
-    // ✅ 2. Subscription renewal success
+    // Handle invoice.payment_succeeded
     if (event.type === "invoice.payment_succeeded") {
       const invoice = event.data.object;
-
       const customerId = invoice.customer;
       const subscriptionId = invoice.subscription;
       const periodEnd = invoice.lines.data[0].period?.end * 1000;
 
       try {
-        // Get customer to extract user identity (email or metadata)
         const customer = await stripe.customers.retrieve(customerId);
         const userId = customer.metadata?.firebaseUID;
 
@@ -64,12 +77,13 @@ module.exports = async (req, res) => {
 
         console.log(`✅ Subscription updated for user ${userId}`);
       } catch (err) {
-        console.error("🔥 Failed to update Firestore:", err);
+        console.error("🔥 Firestore update error:", err);
       }
     }
 
     res.status(200).send("Webhook received");
   } else {
-    res.status(405).json({ message: "Method Not Allowed" });
+    res.setHeader("Allow", "POST");
+    res.status(405).end("Method Not Allowed");
   }
-};
+}
