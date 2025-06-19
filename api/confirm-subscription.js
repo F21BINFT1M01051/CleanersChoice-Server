@@ -22,15 +22,16 @@ module.exports = async (req, res) => {
         customer: customerId,
         items: [{ price: process.env.PRICE_ID }],
         default_payment_method: paymentMethod,
-        expand: ["latest_invoice"], 
+        expand: ["latest_invoice"],
       });
-      
+
       console.log("Subscription object:", subscription);
 
-      const subscriptionEndDate = subscription.latest_invoice.period_end * 1000; 
-      const periodEndTimestamp = subscriptionEndDate + 30 * 24 * 60 * 60 * 1000;
-      
-      res.status(200).json({ success: true, subscriptionId: subscription.id ,  periodEndTimestamp,});
+      const subscriptionEndDate = subscription.latest_invoice.period_end * 1000;
+      const periodEndTimestamp = subscription.latest_invoice.period_end * 1000;
+      // Don't add extra 30 days here
+
+      res.status(200).json({ success: true, subscriptionId: subscription.id, periodEndTimestamp });
     } catch (err) {
       console.error("Subscription Error:", err);
       res.status(500).json({ success: false, message: err.message });

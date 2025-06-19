@@ -3,17 +3,25 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
   if (req.method === "POST") {
-    const { email } = req.body;
+    const { email, uid } = req.body; // ✅ Accept Firebase UID
+
+    if (!uid) {
+      return res.status(400).json({ error: "Missing Firebase UID" });
+    }
 
     try {
-      const customer = await stripe.customers.create({ email });
+      // ✅ Include uid in metadata
+      const customer = await stripe.customers.create({
+        email,
+        metadata: {
+          firebaseUID: uid,
+        },
+      });
 
       const setupIntent = await stripe.setupIntents.create({
         customer: customer.id,
         payment_method_types: ["card"],
       });
-
-      console.log('setupIntent...............', setupIntent)
 
       res.status(200).json({
         setupIntentClientSecret: setupIntent.client_secret,
