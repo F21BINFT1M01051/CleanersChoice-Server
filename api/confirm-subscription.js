@@ -1,4 +1,5 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 module.exports = async (req, res) => {
   if (req.method === "POST") {
     const { customerId, setupIntentId } = req.body;
@@ -8,30 +9,48 @@ module.exports = async (req, res) => {
       if (!paymentMethod) {
         throw new Error("No payment method found on SetupIntent");
       }
-      // Attach payment method to customer (if not already)
+
+      // Attach the payment method to the customer
       await stripe.paymentMethods.attach(paymentMethod, {
         customer: customerId,
       });
-      // Set default payment method for customer
+
+      // Set as default payment method
       await stripe.customers.update(customerId, {
         invoice_settings: {
           default_payment_method: paymentMethod,
         },
       });
+
+      // Create the subscription
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: process.env.PRICE_ID }],
         default_payment_method: paymentMethod,
-        expand: ["latest_invoice"],
+        expand: ["latest_invoice.payment_intent"], // 👈 expand intent to check status
       });
 
       console.log("Subscription object:", subscription);
 
-      const subscriptionEndDate = subscription.latest_invoice.period_end * 1000;
-      const periodEndTimestamp = subscription.latest_invoice.period_end * 1000;
-      // Don't add extra 30 days here
+      // Check if the payment was successful
+      const paymentIntent = subscription.latest_invoice.payment_intent;
+      if (!paymentIntent || paymentIntent.status !== "succeeded") {
+        // ❌ Payment failed
+        return res.status(400).json({
+          success: false,
+          message: `Payment failed: ${paymentIntent?.status || "Unknown"}`,
+        });
+      }
 
-      res.status(200).json({ success: true, subscriptionId: subscription.id, periodEndTimestamp });
+      // ✅ Payment succeeded
+      const periodEndTimestamp = subscription.current_period_end * 1000;
+
+      return res.status(200).json({
+        success: true,
+        subscriptionId: subscription.id,
+        periodEndTimestamp,
+        subscriptionStatus: subscription.status,
+      });
     } catch (err) {
       console.error("Subscription Error:", err);
       res.status(500).json({ success: false, message: err.message });
