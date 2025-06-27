@@ -33,12 +33,11 @@ module.exports = async (req, res) => {
       console.log("Subscription object:", subscription);
 
       // Check if the payment was successful
-      const paymentIntent = subscription.latest_invoice.payment_intent;
-      if (!paymentIntent || paymentIntent.status !== "succeeded") {
-        // ❌ Payment failed
+      const invoice = subscription.latest_invoice;
+      if (!invoice || invoice.status !== "paid") {
         return res.status(400).json({
           success: false,
-          message: `Payment failed: ${paymentIntent?.status || "Unknown"}`,
+          message: `Payment failed: ${invoice?.status || "Unknown"}`,
         });
       }
 
