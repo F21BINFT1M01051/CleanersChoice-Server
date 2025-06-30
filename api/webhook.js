@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("❌ Webhook Error:", err.message);
+      console.log(" Webhook Error:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         },
       });
 
-      console.log(`✅ Default payment method set for ${customerId}`);
+      console.log(`Default payment method set for ${customerId}`);
     }
 
     // Handle invoice.payment_succeeded
@@ -73,11 +73,12 @@ export default async function handler(req, res) {
           cancelSubscription: false,
           subscriptionId,
           subscriptionEndDate: periodEnd,
+          webhook : true
         });
 
-        console.log(`✅ Subscription updated for user ${userId}`);
+        console.log(`Subscription updated for user ${userId}`);
       } catch (err) {
-        console.error("🔥 Firestore update error:", err);
+        console.log("Firestore update error:", err);
       }
     }
 
