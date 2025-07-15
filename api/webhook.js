@@ -10,7 +10,7 @@ if (!admin.apps.length) {
       type: process.env.TYPE,
       project_id: process.env.PROJECT_ID,
       private_key_id: process.env.PRIVATE_KEY_ID,
-      private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"), 
+      private_key: process.env.PRIVATE_KEY.replace(/\\n/g, "\n"),
       client_email: process.env.CLIENT_EMAIL,
       client_id: process.env.CLIENT_ID,
       auth_uri: process.env.AUTH_URI,
@@ -100,6 +100,28 @@ export default async function handler(req, res) {
       console.log(`✅ Subscription updated in Firestore for user ${userId}`);
     } catch (err) {
       console.error("❌ Firestore update error:", err);
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      const userId = customer.metadata?.firebaseUID;
+
+      if (!userId) throw new Error("firebaseUID missing");
+
+      await db.collection("Users").doc(userId).update({
+        subscription: false,
+        cancelSubscription: true,
+        webhook: true,
+      });
+
+      console.log(`Subscription canceled in Firestore for user ${userId}`);
+    } catch (err) {
+      console.error("Firestore update error on cancel:", err);
     }
   }
 

@@ -9,16 +9,19 @@ module.exports = async (req, res) => {
 
     const { subscriptionId } = req.body;
 
+    if (!subscriptionId) {
+      return res.status(400).json({ success: false, message: "subscriptionId is required" });
+    }
+
+    // Mark subscription to cancel at end of current billing cycle
     const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     });
 
-    console.log('update............', updatedSubscription)
-
     return res.status(200).json({
       success: true,
-      canceledAt: updatedSubscription.canceled_at, 
-      currentPeriodEnd: updatedSubscription.cancel_at,
+      cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end,
+      currentPeriodEnd: updatedSubscription.current_period_end * 1000, // Convert to ms
     });
   } catch (error) {
     console.error("Cancel Subscription Error:", error);
