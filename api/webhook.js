@@ -49,7 +49,11 @@ export default async function handler(req, res) {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -76,7 +80,9 @@ export default async function handler(req, res) {
     const invoice = event.data.object;
     const customerId = invoice.customer;
     const subscriptionId = invoice.subscription;
-    const periodEnd = invoice.lines.data[0]?.period?.end ? invoice.lines.data[0].period.end * 1000 : null;
+    const periodEnd = invoice.lines.data[0]?.period?.end
+      ? invoice.lines.data[0].period.end * 1000
+      : null;
 
     try {
       const customer = await stripe.customers.retrieve(customerId);
@@ -88,6 +94,7 @@ export default async function handler(req, res) {
 
       const updateData = {
         subscription: true,
+        subscriptionProvider: "stripe",
         cancelSubscription: false,
         webhook: true,
       };
