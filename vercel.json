@@ -26,6 +26,14 @@
      {
       "src": "/api/send-notification",
       "dest": "/api/send-notification.js"
+    },
+     {
+      "src": "/api/apple-validate",
+      "dest": "/api/apple-validate.js"
+    },
+     {
+      "src": "/api/apple-webhook",
+      "dest": "/api/apple-webhook.js"
     }
   ]
 }
