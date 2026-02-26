@@ -1,5 +1,4 @@
 const admin = require("firebase-admin");
-const fetch = require("node-fetch");
 
 // Initialize Firebase Admin (same pattern as your webhook)
 if (!admin.apps.length) {
