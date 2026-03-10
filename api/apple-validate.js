@@ -51,6 +51,7 @@ module.exports = async (req, res) => {
   try {
     // Step 1: Try production first
     let data = await verifyWithApple(receipt, false);
+    console.log("Initial Apple response:", data);
 
     // Step 2: If Apple says it's a sandbox receipt, retry sandbox
     if (data.status === 21007) {
