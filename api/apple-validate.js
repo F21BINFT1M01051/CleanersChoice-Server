@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
     console.log("data...............", data);
 
     // Step 4: Get the latest subscription info
-    const latestInfo = data.latest_receipt_info;
+    const latestInfo = data.latest_receipt_info || data.receipt?.in_app || [];
     console.log("Latest receipt info:", latestInfo);
     if (!latestInfo || latestInfo.length === 0) {
       return res.status(400).json({
@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
 
     // Sort by expires_date_ms descending to get the latest
     const latest = latestInfo.sort(
-      (a, b) => parseInt(b.expires_date_ms) - parseInt(a.expires_date_ms)
+      (a, b) => parseInt(b.expires_date_ms) - parseInt(a.expires_date_ms),
     )[0];
 
     const expiresMs = parseInt(latest.expires_date_ms, 10);
@@ -109,7 +109,6 @@ module.exports = async (req, res) => {
       expiresDate: expiresMs,
       originalTransactionId,
     });
-
   } catch (error) {
     console.error("Apple validate error:", error);
     return res.status(500).json({ success: false, error: error.message });
