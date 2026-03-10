@@ -68,8 +68,11 @@ module.exports = async (req, res) => {
       });
     }
 
+    console.log("data...............", data);
+
     // Step 4: Get the latest subscription info
     const latestInfo = data.latest_receipt_info;
+    console.log("Latest receipt info:", latestInfo);
     if (!latestInfo || latestInfo.length === 0) {
       return res.status(400).json({
         success: false,
