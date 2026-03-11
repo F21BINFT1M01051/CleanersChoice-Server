@@ -86,6 +86,13 @@ module.exports = async (req, res) => {
       (a, b) => parseInt(b.expires_date_ms) - parseInt(a.expires_date_ms),
     )[0];
 
+    if (latest.product_id !== "cleaner.premium.monthly.V1") {
+      return res.status(400).json({
+        success: false,
+        error: "Product ID mismatch. Invalid subscription.",
+      });
+    }
+
     const expiresMs = parseInt(latest.expires_date_ms, 10);
     const isActive = expiresMs > Date.now();
     const originalTransactionId = latest.original_transaction_id;

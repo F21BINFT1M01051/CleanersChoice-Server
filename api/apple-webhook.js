@@ -19,11 +19,6 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-/**
- * Decode Apple's signed JWT payload (base64 decode middle segment)
- * For production-grade JWT signature verification install:
- * npm install @apple/app-store-server-library
- */
 function decodeSignedPayload(signedPayload) {
   const parts = signedPayload.split(".");
   if (parts.length !== 3) throw new Error("Invalid JWT");
@@ -87,44 +82,73 @@ module.exports = async (req, res) => {
 
     // Handle notification types
     switch (notificationType) {
-      case "DID_RENEW": // ✅ Auto renewal succeeded
-      case "SUBSCRIBED": // ✅ Initial buy or resubscribe
-      case "DID_RECOVER": // ✅ Recovered after billing retry
+      case "DID_RENEW": 
+      case "SUBSCRIBED": 
+      case "DID_RECOVER": 
         await userDoc.ref.update({
           subscription: true,
           subscriptionEndDate: expiresDate,
           cancelSubscription: false,
           webhook: true,
         });
-        console.log(`✅ Subscription renewed for ${userDoc.id}`);
+        console.log(` Subscription renewed for ${userDoc.id}`);
         break;
 
-      case "EXPIRED": // ❌ Subscription expired (not renewed)
-      case "DID_FAIL_TO_RENEW": // ❌ Billing retry failed
+      case "EXPIRED": //  Subscription expired (not renewed)
+      case "DID_FAIL_TO_RENEW": // Billing retry failed
         await userDoc.ref.update({
           subscription: false,
           cancelSubscription: true,
           webhook: true,
         });
-        console.log(`❌ Subscription expired for ${userDoc.id}`);
+        console.log(`Subscription expired for ${userDoc.id}`);
         break;
 
-      case "CANCEL": // 🚫 User cancelled (still active until period end)
+      case "CANCEL": //  User cancelled (still active until period end)
         await userDoc.ref.update({
           cancelSubscription: true,
           subscriptionEndDate: expiresDate,
           webhook: true,
         });
-        console.log(`🚫 Subscription cancelled for ${userDoc.id}`);
+        console.log(`Subscription cancelled for ${userDoc.id}`);
         break;
 
-      case "REFUND": // 💸 Apple issued a refund
+      case "REFUND": //  Apple issued a refund
         await userDoc.ref.update({
           subscription: false,
           cancelSubscription: true,
           webhook: true,
         });
-        console.log(`💸 Subscription refunded for ${userDoc.id}`);
+        console.log(`Subscription refunded for ${userDoc.id}`);
+        break;
+
+      // In your webhook switch statement, add:
+
+      case "DID_CHANGE_RENEWAL_STATUS":
+        if (subtype === "AUTO_RENEW_DISABLED") {
+          await userDoc.ref.update({
+            cancelSubscription: true,
+            subscriptionEndDate: expiresDate,
+            webhook: true,
+          });
+          console.log(` Auto-renew disabled for ${userDoc.id}`);
+        } else if (subtype === "AUTO_RENEW_ENABLED") {
+          // User re-enabled auto-renew
+          await userDoc.ref.update({
+            cancelSubscription: false,
+            webhook: true,
+          });
+          console.log(` Auto-renew re-enabled for ${userDoc.id}`);
+        }
+        break;
+
+      case "GRACE_PERIOD_EXPIRED":
+        await userDoc.ref.update({
+          subscription: false,
+          cancelSubscription: true,
+          webhook: true,
+        });
+        console.log(`Grace period expired for ${userDoc.id}`);
         break;
 
       default:
@@ -132,6 +156,5 @@ module.exports = async (req, res) => {
     }
   } catch (error) {
     console.error("Apple webhook error:", error);
-    // Don't throw — we already sent 200 to Apple
   }
 };
