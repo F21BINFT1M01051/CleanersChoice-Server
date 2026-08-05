@@ -1,4 +1,5 @@
 const admin = require("firebase-admin");
+const { SUBSCRIPTION_STATUS, sanitize } = require("../lib/subscriptions");
 
 // Initialize Firebase Admin (same pattern as your webhook)
 if (!admin.apps.length) {
@@ -98,17 +99,33 @@ module.exports = async (req, res) => {
     const originalTransactionId = latest.original_transaction_id;
 
     // Step 5: Update Firestore
-    await db.collection("Users").doc(uid).update({
-      subscription: isActive,
-      subscriptionProvider: "apple",
-      subscriptionId: latest.transaction_id,
-      originalTransactionId: originalTransactionId,
-      subscriptionEndDate: expiresMs,
-      cancelSubscription: false,
-      webhook: false,
-    });
+    // Existing writes are unchanged. The only additions are subscriptionStatus
+    // and subscriptionUpdatedAt, so the receipt-validation contract and every
+    // legacy field behave exactly as before.
+    await db.collection("Users").doc(uid).update(
+      sanitize({
+        subscription: isActive,
+        subscriptionProvider: "apple",
+        subscriptionId: latest.transaction_id,
+        originalTransactionId: originalTransactionId,
+        subscriptionEndDate: expiresMs,
+        cancelSubscription: false,
+        webhook: false,
+        // 🆕 new source of truth
+        subscriptionStatus: isActive
+          ? SUBSCRIPTION_STATUS.ACTIVE
+          : SUBSCRIPTION_STATUS.EXPIRED,
+        subscriptionUpdatedAt: Date.now(),
+      }),
+    );
 
     console.log(`✅ Apple subscription validated for user ${uid}`);
+
+    // NOTE: no Payments row is written here on purpose. The legacy verifyReceipt
+    // response carries no price, so recording one would either invent an amount
+    // or store a zero. Apple's SUBSCRIBED notification fires for the same
+    // purchase and does carry `price`/`currency`, and it writes the row
+    // idempotently — so the initial payment is captured there instead.
 
     return res.status(200).json({
       success: true,
