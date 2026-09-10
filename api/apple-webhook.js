@@ -7,6 +7,7 @@ const {
   recordPayment,
   sanitize,
 } = require("../lib/subscriptions");
+const { syncCleanerVisibility } = require("../lib/visibility");
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -162,6 +163,13 @@ module.exports = async (req, res) => {
     console.log(
       `Updated ${userDoc.id} -> ${notificationType}/${subtype ?? "-"}`,
     );
+
+    // Re-derive the customer-facing visibility deadline from the post-update
+    // document. Runs for every notification type, including the ones that
+    // produced no subscription change, because it is cheap and it means a doc
+    // repaired by an earlier failure gets picked up on the next notification.
+    // Never throws.
+    await syncCleanerVisibility({ db, admin, userId: userDoc.id });
 
     // 🆕 Payment history for money actually collected. Apple reports `price` in
     // milliunits (4990 => $4.99) and only on notifications generated from

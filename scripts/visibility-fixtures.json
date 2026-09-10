@@ -1,0 +1,258 @@
+{
+  "_": "SHARED CONTRACT between the server and the app. Both repos assert against this exact file: lib/visibility.js computeVisibleUntil() here, and src/utils/cleanerVisibility.ts resolveVisibleUntil() in the app (__tests__/fixtures/visibility-fixtures.json). If the two ever drift, one of the two suites fails. Keep the copies byte-identical.",
+  "now": 1789473600000,
+  "_now": "15 Sep 2026 12:00 UTC \u2014 the day the cleaner in the requirement cancels renewal",
+  "sep30": 1790812799000,
+  "aug31": 1788220799000,
+  "cases": [
+    {
+      "name": "active subscription, period running",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "active",
+        "subscriptionEndDate": 1790812799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "cancelled renewal, paid through 30 Sep \u2014 the requirement's worked example",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "active",
+        "cancelSubscription": true,
+        "subscriptionEndDate": 1790812799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "status canceled but period still running \u2014 still paid for",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "canceled",
+        "cancelSubscription": true,
+        "subscriptionEndDate": 1790812799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "cancelled and the paid period has ended",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "canceled",
+        "cancelSubscription": true,
+        "subscriptionEndDate": 1788220799000
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    },
+    {
+      "name": "stale active status, period quietly elapsed (missed webhook)",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "active",
+        "subscriptionEndDate": 1788220799000
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    },
+    {
+      "name": "expired, never renewed",
+      "user": {
+        "role": "Cleaner",
+        "subscription": false,
+        "subscriptionStatus": "expired",
+        "subscriptionEndDate": 1788220799000
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    },
+    {
+      "name": "refunded inside the paid period \u2014 revoked immediately",
+      "user": {
+        "role": "Cleaner",
+        "subscription": false,
+        "subscriptionStatus": "refunded",
+        "subscriptionEndDate": 1790812799000
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "past_due inside the paid period \u2014 renewal being retried, still visible",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "past_due",
+        "subscriptionEndDate": 1790812799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "past_due and the period has elapsed",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "past_due",
+        "subscriptionEndDate": 1788220799000
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    },
+    {
+      "name": "never subscribed",
+      "user": {
+        "role": "Cleaner",
+        "subscriptionStatus": "none"
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "empty user document",
+      "user": {
+        "role": "Cleaner"
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "subscription true but no period end at all",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": null
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "account disabled despite a valid period",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "active",
+        "subscriptionEndDate": 1790812799000,
+        "accountStatus": "disabled"
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "account status casing and whitespace are ignored",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": 1790812799000,
+        "accountStatus": " SUSPENDED "
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "accountStatus active is a normal account",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": 1790812799000,
+        "accountStatus": "active"
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "zero period end is treated as no access, not as epoch",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": 0
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "non-numeric period end is ignored",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": "1790812799000"
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "grace rescues an elapsed period",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionStatus": "expired",
+        "subscriptionEndDate": 1788220799000,
+        "visibilityGraceUntil": 1790812799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "a real period later than the grace wins",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": 1790812799000,
+        "visibilityGraceUntil": 1788220799000
+      },
+      "visibleUntil": 1790812799000,
+      "visibleNow": true
+    },
+    {
+      "name": "grace cannot rescue a refund",
+      "user": {
+        "role": "Cleaner",
+        "subscriptionStatus": "refunded",
+        "subscriptionEndDate": 1788220799000,
+        "visibilityGraceUntil": 1790812799000
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "grace cannot rescue a disabled account",
+      "user": {
+        "role": "Cleaner",
+        "subscription": true,
+        "subscriptionEndDate": 1788220799000,
+        "accountStatus": "disabled",
+        "visibilityGraceUntil": 1790812799000
+      },
+      "visibleUntil": 0,
+      "visibleNow": false
+    },
+    {
+      "name": "an elapsed grace with no subscription stays hidden",
+      "user": {
+        "role": "Cleaner",
+        "visibilityGraceUntil": 1788220799000
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    },
+    {
+      "name": "a non-numeric grace is ignored",
+      "user": {
+        "role": "Cleaner",
+        "subscriptionEndDate": 1788220799000,
+        "visibilityGraceUntil": "soon"
+      },
+      "visibleUntil": 1788220799000,
+      "visibleNow": false
+    }
+  ],
+  "_grace": "visibilityGraceUntil is a FLOOR on the deadline, used for cohorts whose real entitlement cannot be read from our own data. Hard revocations (refunded, inactive account) ignore it."
+}

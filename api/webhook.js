@@ -10,6 +10,7 @@ const {
   getStripePeriodEndMs,
   recordPayment,
 } = require("../lib/subscriptions");
+const { syncCleanerVisibility } = require("../lib/visibility");
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -48,6 +49,9 @@ async function updateUser(userId, data, label) {
   try {
     await db.collection("Users").doc(userId).update(sanitize(data));
     console.log(`✅ [${label}] Users/${userId} updated`);
+    // Re-derive the customer-facing visibility deadline from the POST-update
+    // document. Never throws; the reconciliation sweep repairs any failure.
+    await syncCleanerVisibility({ db, admin, userId });
   } catch (err) {
     console.error(`❌ [${label}] Users/${userId} update failed:`, err.message);
   }
@@ -132,6 +136,9 @@ export default async function handler(req, res) {
 
       await db.collection("Users").doc(userId).update(sanitize(updateData));
       console.log(`✅ Subscription updated in Firestore for user ${userId}`);
+
+      // Renewal extends the paid period, so the visibility deadline moves with it.
+      await syncCleanerVisibility({ db, admin, userId });
 
       // ---- new: payment history (idempotent, non-blocking) ----
       // Runs after the state update so a bookkeeping failure can never affect
@@ -255,6 +262,11 @@ export default async function handler(req, res) {
           gracePeriodEndsAt: null,
         }),
       );
+
+      // Stripe reports the subscription as gone. `subscriptionEndDate` is left
+      // as-is on purpose, so a cleaner who cancelled mid-period stays visible
+      // until that date and then drops off by itself.
+      await syncCleanerVisibility({ db, admin, userId });
 
       console.log(`Subscription canceled in Firestore for user ${userId}`);
     } catch (err) {

@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const { SUBSCRIPTION_STATUS, sanitize } = require("../lib/subscriptions");
+const { syncCleanerVisibility } = require("../lib/visibility");
 
 // Initialize Firebase Admin (same pattern as your webhook)
 if (!admin.apps.length) {
@@ -120,6 +121,13 @@ module.exports = async (req, res) => {
     );
 
     console.log(`✅ Apple subscription validated for user ${uid}`);
+
+    // This is the FIRST write of a real subscriptionEndDate for a new Apple
+    // purchase — the notification can arrive later, or not at all if the App
+    // Store Connect notification version is misconfigured. Stamping visibility
+    // here is what makes a brand-new cleaner's services appear immediately
+    // rather than waiting on a webhook that may never land. Never throws.
+    await syncCleanerVisibility({ db, admin, userId: uid });
 
     // NOTE: no Payments row is written here on purpose. The legacy verifyReceipt
     // response carries no price, so recording one would either invent an amount
